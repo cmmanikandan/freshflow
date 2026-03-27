@@ -18,3 +18,4 @@ View your app in AI Studio: https://ai.studio/apps/9ed40904-129d-49c9-8896-9de23
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+# freshflow 
