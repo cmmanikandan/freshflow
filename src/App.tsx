@@ -144,15 +144,17 @@ const Modal = ({ isOpen, onClose, title, children }: any) => (
           initial={{ y: '100%' }} 
           animate={{ y: 0 }} 
           exit={{ y: '100%' }} 
-          className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white rounded-t-[3rem] p-8 z-[70] shadow-2xl"
+          className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white rounded-t-[3rem] z-[70] shadow-2xl max-h-[80vh] flex flex-col"
         >
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 px-8 pt-8 flex-shrink-0">
             <h3 className="text-2xl font-black">{title}</h3>
             <button onClick={onClose} className="w-10 h-10 bg-bg rounded-full flex items-center justify-center">
               <ICONS.Plus className="rotate-45" size={24} />
             </button>
           </div>
-          {children}
+          <div className="overflow-y-auto px-8 pb-8 flex-1">
+            {children}
+          </div>
         </motion.div>
       </>
     )}
@@ -2971,16 +2973,16 @@ export default function App() {
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
-                className="bg-white w-full max-w-md rounded-[2rem] p-6 flex flex-col gap-6"
+                className="bg-white w-full max-w-md rounded-[2rem] flex flex-col gap-6 max-h-[80vh]"
               >
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center p-6 flex-shrink-0">
                   <h3 className="text-2xl font-black">Bulk Import</h3>
                   <button onClick={() => setIsBulkImportModalOpen(false)} className="w-10 h-10 bg-bg rounded-full flex items-center justify-center">
                     <ICONS.X size={20} />
                   </button>
                 </div>
                 
-                <div className="flex flex-col gap-4">
+                <div className="overflow-y-auto px-6 pb-6 flex-1 flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold text-ink/40 uppercase ml-4">Paste JSON Data</label>
                     <textarea 
@@ -2990,11 +2992,11 @@ export default function App() {
                       placeholder='[{"name": "Apple", "price": 100, "category": "Fruits", "unit": "1kg"}]'
                     />
                   </div>
-                </div>
 
-                <Button onClick={handleBulkImport} className="w-full py-4 text-lg bg-secondary text-white">
-                  Import Products
-                </Button>
+                  <Button onClick={handleBulkImport} className="w-full py-4 text-lg bg-secondary text-white">
+                    Import Products
+                  </Button>
+                </div>
               </motion.div>
             </motion.div>
           )}
@@ -3013,16 +3015,16 @@ export default function App() {
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
-                className="bg-white w-full max-w-md rounded-[2rem] p-6 flex flex-col gap-6 max-h-[90vh] overflow-y-auto"
+                className="bg-white w-full max-w-md rounded-[2rem] flex flex-col gap-6 max-h-[90vh]"
               >
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center p-6 flex-shrink-0">
                   <h3 className="text-2xl font-black">Add Product</h3>
                   <button onClick={() => setIsAddProductModalOpen(false)} className="w-10 h-10 bg-bg rounded-full flex items-center justify-center">
                     <ICONS.X size={20} />
                   </button>
                 </div>
                 
-                <div className="flex flex-col gap-4">
+                <div className="overflow-y-auto px-6 pb-6 flex-1 flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold text-ink/40 uppercase ml-4">Product Name</label>
                     <input 
@@ -3113,11 +3115,11 @@ export default function App() {
                       )}
                     </div>
                   </div>
-                </div>
 
-                <Button onClick={handleAddProduct} className="w-full py-4 text-lg">
-                  Add Product
-                </Button>
+                  <Button onClick={handleAddProduct} className="w-full py-4 text-lg">
+                    Add Product
+                  </Button>
+                </div>
               </motion.div>
             </motion.div>
           )}
