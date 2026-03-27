@@ -2851,6 +2851,85 @@ export default function App() {
       }
     };
 
+    const downloadProductTemplate = () => {
+      const templateData = [
+        {
+          name: 'Apple',
+          price: 100,
+          category: 'Fruits',
+          unit: '1kg',
+          image: 'https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?auto=format&fit=crop&q=80&w=400'
+        },
+        {
+          name: 'Banana',
+          price: 60,
+          category: 'Fruits',
+          unit: '1kg',
+          image: 'https://images.unsplash.com/photo-1603833665858-e61d17a86224?auto=format&fit=crop&q=80&w=400'
+        },
+        {
+          name: 'Tomato',
+          price: 40,
+          category: 'Vegetables',
+          unit: '1kg',
+          image: 'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&q=80&w=400'
+        }
+      ];
+      const csv = 'name,price,category,unit,image\n' + templateData.map(p => `"${p.name}","${p.price}","${p.category}","${p.unit}","${p.image}"`).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'product_template.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      showToast('Product template downloaded successfully');
+    };
+
+    const handleProductCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const csv = event.target?.result as string;
+          const lines = csv.split('\n').map(line => line.trim()).filter(Boolean);
+          if (lines.length < 2) {
+            showToast('CSV file is empty or invalid', 'error');
+            return;
+          }
+
+          const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+          const productsFromCsv: any[] = [];
+
+          for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].match(/"([^"]*)"|[^,]+/g) || [];
+            const product: any = {};
+            headers.forEach((header, index) => {
+              product[header] = values[index]?.replace(/^"|"$/g, '').trim() || '';
+            });
+            if (product.name && product.price && product.category) {
+              productsFromCsv.push(product);
+            }
+          }
+
+          if (productsFromCsv.length === 0) {
+            showToast('No valid products found in CSV', 'error');
+            return;
+          }
+
+          setBulkJson(JSON.stringify(productsFromCsv, null, 2));
+          showToast(`Loaded ${productsFromCsv.length} products from CSV. Click Import Products.`);
+        } catch (error) {
+          showToast('Error parsing CSV file', 'error');
+          console.error(error);
+        }
+      };
+
+      reader.readAsText(file);
+    };
+
     const downloadVendorTemplate = () => {
       const templateData = [
         {
@@ -3169,6 +3248,27 @@ export default function App() {
                 </div>
                 
                 <div className="overflow-y-auto px-6 pb-6 flex-1 flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold text-ink/40 uppercase">Download CSV Template</label>
+                    <Button onClick={downloadProductTemplate} variant="outline" className="w-full py-3">
+                      <ICONS.Package size={16} className="mr-2" /> Download Template
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold text-ink/40 uppercase">Upload CSV File</label>
+                    <label className="w-full bg-bg rounded-2xl px-6 py-4 flex items-center justify-center gap-2 cursor-pointer hover:bg-black/5 transition-colors border border-dashed border-black/20">
+                      <ICONS.Tag size={20} className="text-ink/40" />
+                      <span className="text-sm font-bold text-ink/60">Upload CSV</span>
+                      <input
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        onChange={handleProductCsvUpload}
+                      />
+                    </label>
+                  </div>
+
                   <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold text-ink/40 uppercase ml-4">Paste JSON Data</label>
                     <textarea 
