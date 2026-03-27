@@ -235,6 +235,8 @@ export default function App() {
   const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [isAddVendorModalOpen, setIsAddVendorModalOpen] = useState(false);
   const [newVendor, setNewVendor] = useState({ name: '', type: '', image: '' });
+  const [isBulkImportVendorModalOpen, setIsBulkImportVendorModalOpen] = useState(false);
+  const [bulkVendorJson, setBulkVendorJson] = useState('');
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(DEFAULT_PAYMENT_CONFIG);
   const [isSavingPaymentConfig, setIsSavingPaymentConfig] = useState(false);
 
@@ -2764,6 +2766,105 @@ export default function App() {
       }
     };
 
+    const downloadVendorTemplate = () => {
+      const templateData = [
+        {
+          name: 'Green Valley Farms',
+          type: 'Organic Produce',
+          image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=400'
+        },
+        {
+          name: 'Fresh Dairy Co',
+          type: 'Dairy Products',
+          image: 'https://images.unsplash.com/photo-1452195917191-5ed0529ce53b?auto=format&fit=crop&q=80&w=400'
+        },
+        {
+          name: 'Spice Master Store',
+          type: 'Spices & Condiments',
+          image: 'https://images.unsplash.com/photo-1525611522615-33a60b9c1acb?auto=format&fit=crop&q=80&w=400'
+        }
+      ];
+      const csv = 'name,type,image\n' + templateData.map(v => `"${v.name}","${v.type}","${v.image}"`).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'vendor_template.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      showToast('Vendor template downloaded successfully');
+    };
+
+    const handleBulkImportVendors = async () => {
+      try {
+        const parsedVendors = JSON.parse(bulkVendorJson);
+        if (!Array.isArray(parsedVendors)) {
+          showToast('Invalid JSON format. Must be an array of vendors.');
+          return;
+        }
+        
+        let count = 0;
+        for (const v of parsedVendors) {
+          if (v.name && v.type) {
+            await addDoc(collection(db, 'vendors'), {
+              name: v.name,
+              type: v.type,
+              image: v.image || '',
+              rating: 0,
+              sales: 0,
+              createdAt: serverTimestamp()
+            });
+            count++;
+          }
+        }
+        showToast(`Successfully imported ${count} vendors`);
+        setIsBulkImportVendorModalOpen(false);
+        setBulkVendorJson('');
+      } catch (error) {
+        showToast('Error parsing JSON or importing vendors');
+        console.error(error);
+      }
+    };
+
+    const handleVendorFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const csv = event.target?.result as string;
+          const lines = csv.split('\n');
+          const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+          const vendors = [];
+
+          for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const values = lines[i].match(/"([^"]*)"|[^,]+/g) || [];
+            const vendor: any = {};
+            headers.forEach((header, index) => {
+              vendor[header] = values[index]?.replace(/^"|"$/g, '').trim() || '';
+            });
+            if (vendor.name && vendor.type) {
+              vendors.push(vendor);
+            }
+          }
+
+          if (vendors.length === 0) {
+            showToast('No valid vendors found in CSV', 'error');
+            return;
+          }
+
+          setBulkVendorJson(JSON.stringify(vendors, null, 2));
+          showToast(`Loaded ${vendors.length} vendors from CSV. Review and click Import.`);
+        } catch (error) {
+          showToast('Error parsing CSV file');
+          console.error(error);
+        }
+      };
+      reader.readAsText(file);
+    };
+
     const handleAddProduct = async () => {
       if (!newProduct.name || !newProduct.price || !newProduct.category) {
         showToast('Please fill all required fields');
@@ -2995,6 +3096,69 @@ export default function App() {
 
                   <Button onClick={handleBulkImport} className="w-full py-4 text-lg bg-secondary text-white">
                     Import Products
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Bulk Import Vendors Modal */}
+        <AnimatePresence>
+          {isBulkImportVendorModalOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-ink/20 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
+            >
+              <motion.div 
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                className="bg-white w-full max-w-md rounded-[2rem] flex flex-col gap-6 max-h-[80vh]"
+              >
+                <div className="flex justify-between items-center p-6 flex-shrink-0">
+                  <h3 className="text-2xl font-black">Bulk Import Vendors</h3>
+                  <button onClick={() => setIsBulkImportVendorModalOpen(false)} className="w-10 h-10 bg-bg rounded-full flex items-center justify-center">
+                    <ICONS.X size={20} />
+                  </button>
+                </div>
+                
+                <div className="overflow-y-auto px-6 pb-6 flex-1 flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold text-ink/40 uppercase">Download CSV Template</label>
+                    <Button onClick={downloadVendorTemplate} variant="outline" className="w-full py-3">
+                      <ICONS.Package size={16} className="mr-2" /> Download Template
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold text-ink/40 uppercase">Or Upload CSV File</label>
+                    <label className="w-full bg-bg rounded-2xl px-6 py-4 flex items-center justify-center gap-2 cursor-pointer hover:bg-black/5 transition-colors border border-dashed border-black/20">
+                      <ICONS.Tag size={20} className="text-ink/40" />
+                      <span className="text-sm font-bold text-ink/60">Upload CSV</span>
+                      <input 
+                        type="file" 
+                        accept=".csv"
+                        className="hidden" 
+                        onChange={handleVendorFileUpload}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold text-ink/40 uppercase">Or Paste JSON Data</label>
+                    <textarea 
+                      value={bulkVendorJson}
+                      onChange={e => setBulkVendorJson(e.target.value)}
+                      className="w-full bg-bg rounded-2xl px-6 py-4 outline-none font-mono text-xs h-48 resize-none"
+                      placeholder='[{"name": "Green Valley Farms", "type": "Organic Produce", "image": "https://..."}]'
+                    />
+                  </div>
+
+                  <Button onClick={handleBulkImportVendors} disabled={!bulkVendorJson.trim()} className="w-full py-4 text-lg bg-secondary text-white">
+                    Import Vendors
                   </Button>
                 </div>
               </motion.div>
@@ -3666,9 +3830,12 @@ export default function App() {
 
       {adminTab === 'Vendors' && (
         <div className="flex flex-col gap-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-4">
             <h3 className="text-2xl font-black">Vendor Partners</h3>
-            <Button className="px-6" onClick={() => setIsAddVendorModalOpen(true)}>Onboard Vendor</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className="px-4" onClick={() => setIsBulkImportVendorModalOpen(true)}>Bulk Import</Button>
+              <Button className="px-6" onClick={() => setIsAddVendorModalOpen(true)}>Onboard Vendor</Button>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {vendors.length > 0 ? vendors.map((vendor) => (
