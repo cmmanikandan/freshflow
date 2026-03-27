@@ -39,6 +39,12 @@ import {
   OperationType
 } from './firebase';
 
+declare global {
+  interface Window {
+    Razorpay?: any;
+  }
+}
+
 // --- Types ---
 type Screen = 
   | 'splash' 
@@ -65,6 +71,12 @@ type Screen =
 interface CartItem {
   productId: number;
   quantity: number;
+}
+
+interface PaymentConfig {
+  merchantName: string;
+  upiId: string;
+  qrImage: string;
 }
 
 // --- Components ---
@@ -148,6 +160,12 @@ const Modal = ({ isOpen, onClose, title, children }: any) => (
 );
 
 export default function App() {
+  const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
+    merchantName: 'FreshFlow',
+    upiId: '',
+    qrImage: ''
+  };
+
   const [screen, setScreen] = useState<Screen>('splash');
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -214,6 +232,10 @@ export default function App() {
   const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [isAddVendorModalOpen, setIsAddVendorModalOpen] = useState(false);
   const [newVendor, setNewVendor] = useState({ name: '', type: '', image: '' });
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(DEFAULT_PAYMENT_CONFIG);
+  const [isSavingPaymentConfig, setIsSavingPaymentConfig] = useState(false);
+
+  const razorpayKeyId = (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || 'rzp_test_SJ47gyjCKEIpt2';
 
   const ORDER_STATUSES = ['Processing', 'Confirmed', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'];
 
@@ -321,6 +343,7 @@ export default function App() {
     let categoriesUnsubscribe: () => void;
     let vendorsUnsubscribe: () => void;
     let subscriptionsUnsubscribe: () => void;
+    let paymentConfigUnsubscribe: () => void;
 
     const fetchData = async () => {
       setLoadingData(true);
@@ -347,6 +370,19 @@ export default function App() {
           const vendorsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           setVendors(vendorsData);
         }, (error) => handleFirestoreError(error, OperationType.GET, 'vendors'));
+
+        paymentConfigUnsubscribe = onSnapshot(doc(db, 'app_settings', 'payment_config'), (snap) => {
+          if (snap.exists()) {
+            const data = snap.data() as Partial<PaymentConfig>;
+            setPaymentConfig({
+              merchantName: data.merchantName || DEFAULT_PAYMENT_CONFIG.merchantName,
+              upiId: data.upiId || '',
+              qrImage: data.qrImage || ''
+            });
+          } else {
+            setPaymentConfig(DEFAULT_PAYMENT_CONFIG);
+          }
+        }, (error) => handleFirestoreError(error, OperationType.GET, 'app_settings/payment_config'));
 
         // 3. Authenticated Data
         if (user) {
@@ -393,6 +429,7 @@ export default function App() {
       categoriesUnsubscribe?.();
       vendorsUnsubscribe?.();
       subscriptionsUnsubscribe?.();
+      paymentConfigUnsubscribe?.();
     };
   }, [isAuthReady, user, profile?.role]);
 
@@ -554,6 +591,50 @@ export default function App() {
       return total + (product?.price || 0) * item.quantity;
     }, 0);
   }, [cart, products]);
+
+  const isManualPaymentMethod = (paymentType?: string) => ['UPI', 'QR'].includes(paymentType || '');
+
+  const loadRazorpayScript = async (): Promise<boolean> => {
+    if (window.Razorpay) return true;
+
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleSavePaymentConfig = async () => {
+    if (!user || profile?.role !== 'admin') return;
+
+    if (!paymentConfig.upiId.trim()) {
+      showToast('Please enter UPI ID', 'error');
+      return;
+    }
+
+    setIsSavingPaymentConfig(true);
+    try {
+      await setDoc(
+        doc(db, 'app_settings', 'payment_config'),
+        {
+          merchantName: paymentConfig.merchantName.trim() || 'FreshFlow',
+          upiId: paymentConfig.upiId.trim(),
+          qrImage: paymentConfig.qrImage || '',
+          updatedBy: user.uid,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+      showToast('Payment settings saved');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'app_settings/payment_config');
+    } finally {
+      setIsSavingPaymentConfig(false);
+    }
+  };
 
   const filteredProducts = useMemo(() => {
     let result = products.filter(p => {
@@ -1378,7 +1459,7 @@ export default function App() {
     const [usePoints, setUsePoints] = useState(false);
 
     const pointsToDiscount = usePoints ? Math.min(profile?.points || 0, cartTotal) : 0;
-    const finalTotal = cartTotal - pointsToDiscount;
+    const finalTotal = cartTotal - discountAmount - pointsToDiscount;
 
     const handlePlaceOrder = async () => {
       if (!user) {
@@ -1406,12 +1487,14 @@ export default function App() {
         return;
       }
 
-      const addressesList = profile?.addresses?.length > 0 
-        ? profile.addresses 
+      const addressesList = profile?.addresses?.length > 0
+        ? profile.addresses
         : [{ type: 'Home', details: '123 Fresh Street, Green City, NY' }];
 
       const paymentMethodsList = [
-        { type: 'Razorpay', details: 'Razorpay (Online Payment)' },
+        { type: 'Razorpay', details: 'Razorpay (Cards, UPI, Netbanking)' },
+        { type: 'UPI', details: paymentConfig.upiId ? `Pay via UPI (${paymentConfig.upiId})` : 'Pay via UPI (Admin not configured)' },
+        { type: 'QR', details: 'Scan QR and Pay' },
         { type: 'Cash', details: 'Cash on Delivery' }
       ];
 
@@ -1420,11 +1503,57 @@ export default function App() {
 
       setIsProcessing(true);
       try {
+        if ((selectedPayment.type === 'UPI' || selectedPayment.type === 'QR') && !paymentConfig.upiId.trim()) {
+          showToast('Admin has not configured UPI/QR yet', 'error');
+          setIsProcessing(false);
+          return;
+        }
+
+        let paymentStatus: 'Paid' | 'Pending' | 'Unpaid' = 'Pending';
+        let paymentReference: string | null = null;
+
         if (selectedPayment.type === 'Razorpay') {
-          showToast('Redirecting to Razorpay...');
-          // Simulate Razorpay flow
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          showToast('Payment successful!');
+          const scriptLoaded = await loadRazorpayScript();
+          if (!scriptLoaded || !window.Razorpay) {
+            showToast('Unable to load Razorpay checkout', 'error');
+            setIsProcessing(false);
+            return;
+          }
+
+          const paymentId = await new Promise<string>((resolve, reject) => {
+            const razorpay = new window.Razorpay({
+              key: razorpayKeyId,
+              amount: Math.max(100, Math.round(finalTotal * 100)),
+              currency: 'INR',
+              name: paymentConfig.merchantName || 'FreshFlow',
+              description: 'FreshFlow Grocery Order',
+              prefill: {
+                name: orderName,
+                contact: orderPhone,
+                email: user.email || ''
+              },
+              theme: { color: '#0A9A5D' },
+              handler: (response: any) => resolve(response?.razorpay_payment_id || `rzp_${Date.now()}`),
+              modal: {
+                ondismiss: () => reject(new Error('Razorpay payment cancelled'))
+              }
+            });
+
+            razorpay.on('payment.failed', (response: any) => {
+              reject(new Error(response?.error?.description || 'Razorpay payment failed'));
+            });
+
+            razorpay.open();
+          });
+
+          paymentStatus = 'Paid';
+          paymentReference = paymentId;
+          showToast('Razorpay payment successful!');
+        } else if (selectedPayment.type === 'UPI' || selectedPayment.type === 'QR') {
+          paymentStatus = 'Unpaid';
+          showToast('Payment request created. Admin will verify and mark paid.');
+        } else {
+          paymentStatus = 'Pending';
         }
 
         const orderData = {
@@ -1436,7 +1565,7 @@ export default function App() {
             photoURL: user.photoURL
           },
           status: 'Processing',
-          total: cartTotal - discountAmount,
+          total: finalTotal,
           discountApplied: isCouponApplied ? { code: couponCode.toUpperCase(), amount: discountAmount } : null,
           items: cart.map(item => {
             const product = products.find(p => p.id === item.productId);
@@ -1451,27 +1580,32 @@ export default function App() {
           }),
           createdAt: serverTimestamp(),
           address: `${selectedAddress.type}: ${selectedAddress.details}`,
+          paymentType: selectedPayment.type,
           paymentMethod: selectedPayment.details,
-          paymentStatus: selectedPayment.type === 'Cash' ? 'Pending' : 'Paid',
+          paymentStatus,
+          paymentReference,
+          adminPaymentReviewRequired: isManualPaymentMethod(selectedPayment.type),
+          paymentMeta: {
+            upiId: paymentConfig.upiId || null,
+            merchantName: paymentConfig.merchantName || 'FreshFlow'
+          },
           timeSlot: selectedTimeSlot,
           pointsUsed: pointsToDiscount
         };
 
-        const orderRef = await addDoc(collection(db, 'orders'), orderData);
-        
-        // Update user profile stats
-        if (user) {
-          const userRef = doc(db, 'users', user.uid);
-          await updateDoc(userRef, {
-            ordersCount: increment(1),
-            points: increment(Math.floor(orderData.total / 100) * 10 - pointsToDiscount)
-          });
-        }
+        await addDoc(collection(db, 'orders'), orderData);
+
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+          ordersCount: increment(1),
+          points: increment(Math.floor(orderData.total / 100) * 10 - pointsToDiscount)
+        });
 
         setCart([]);
         setScreen('tracking');
       } catch (error) {
-        handleFirestoreError(error, OperationType.WRITE, 'orders');
+        const message = error instanceof Error ? error.message : 'Unable to place order';
+        showToast(message, 'error');
       } finally {
         setIsProcessing(false);
       }
@@ -1482,7 +1616,9 @@ export default function App() {
       : [{ type: 'Home', details: '123 Fresh Street, Green City, NY' }];
 
     const paymentMethods = [
-      { type: 'Razorpay', details: 'Razorpay (Online Payment)' },
+      { type: 'Razorpay', details: 'Razorpay (Cards, UPI, Netbanking)' },
+      { type: 'UPI', details: paymentConfig.upiId ? `UPI ID: ${paymentConfig.upiId}` : 'UPI ID not configured by admin' },
+      { type: 'QR', details: paymentConfig.qrImage ? 'Scan QR and pay to merchant' : 'QR not uploaded by admin' },
       { type: 'Cash', details: 'Cash on Delivery' }
     ];
 
@@ -1572,13 +1708,34 @@ export default function App() {
                   className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${selectedPaymentIndex === i ? 'border-primary bg-primary/5' : 'border-black/5 bg-white'}`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedPaymentIndex === i ? 'bg-primary text-white' : 'bg-bg text-primary'}`}>
-                    {method.type === 'Visa' ? <ICONS.CreditCard size={20} /> : <ICONS.Smartphone size={20} />}
+                    {method.type === 'Razorpay' && <ICONS.CreditCard size={20} />}
+                    {method.type === 'UPI' && <ICONS.Smartphone size={20} />}
+                    {method.type === 'QR' && <ICONS.Camera size={20} />}
+                    {method.type === 'Cash' && <ICONS.ShoppingBag size={20} />}
                   </div>
                   <span className={`font-bold ${selectedPaymentIndex === i ? 'text-ink' : 'text-ink/40'}`}>{method.details}</span>
                   {selectedPaymentIndex === i && <ICONS.CheckCircle className="text-primary ml-auto" size={20} />}
                 </button>
               ))}
             </div>
+            {selectedPaymentIndex !== -1 && paymentMethods[selectedPaymentIndex]?.type === 'UPI' && (
+              <div className="mt-3 p-4 bg-primary/5 rounded-2xl border border-primary/20">
+                <p className="text-xs font-black uppercase text-primary mb-1">UPI Payment</p>
+                <p className="font-bold">UPI ID: {paymentConfig.upiId || 'Not configured'}</p>
+                <p className="text-xs text-ink/50 mt-1">Pay to this UPI ID and place order. Admin will mark paid after receiving payment.</p>
+              </div>
+            )}
+            {selectedPaymentIndex !== -1 && paymentMethods[selectedPaymentIndex]?.type === 'QR' && (
+              <div className="mt-3 p-4 bg-primary/5 rounded-2xl border border-primary/20 flex flex-col gap-3 items-center">
+                <p className="text-xs font-black uppercase text-primary">Scan QR and Pay</p>
+                {paymentConfig.qrImage ? (
+                  <img src={paymentConfig.qrImage} alt="Merchant QR" className="w-44 h-44 object-contain rounded-xl bg-white p-2 border border-black/5" />
+                ) : (
+                  <p className="text-xs text-red-500 font-bold">Admin has not uploaded QR yet.</p>
+                )}
+                <p className="text-xs text-ink/50 text-center">After payment, place order. Admin will verify and mark paid.</p>
+              </div>
+            )}
           </div>
 
           <div className="bg-white p-4 rounded-2xl border border-black/5 flex flex-col gap-3">
@@ -1647,7 +1804,7 @@ export default function App() {
           <div className="h-px bg-black/5 my-1" />
           <div className="flex justify-between items-center">
             <span className="font-black text-lg">Total</span>
-            <span className="text-2xl font-black text-primary">₹{(cartTotal - discountAmount - pointsToDiscount).toFixed(2)}</span>
+            <span className="text-2xl font-black text-primary">₹{finalTotal.toFixed(2)}</span>
           </div>
         </div>
 
@@ -3137,9 +3294,33 @@ export default function App() {
                         </select>
                       </td>
                       <td className="p-4">
-                        <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${order.paymentStatus === 'Paid' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                          {order.paymentStatus || 'Pending'}
-                        </span>
+                        <div className="flex flex-col gap-2">
+                          <span className="text-[10px] font-bold text-ink/40 uppercase">{order.paymentType || order.paymentMethod || 'Unknown'}</span>
+                          {isManualPaymentMethod(order.paymentType) ? (
+                            <select
+                              value={order.paymentStatus || 'Unpaid'}
+                              onChange={async (e) => {
+                                try {
+                                  const newPaymentStatus = e.target.value;
+                                  await updateDoc(doc(db, 'orders', order.id), {
+                                    paymentStatus: newPaymentStatus,
+                                    adminPaymentReviewRequired: newPaymentStatus !== 'Paid'
+                                  });
+                                } catch (error) {
+                                  handleFirestoreError(error, OperationType.UPDATE, `orders/${order.id}`);
+                                }
+                              }}
+                              className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase border-none focus:ring-0 ${order.paymentStatus === 'Paid' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}
+                            >
+                              <option value="Unpaid">Unpaid</option>
+                              <option value="Paid">Paid</option>
+                            </select>
+                          ) : (
+                            <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${order.paymentStatus === 'Paid' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                              {order.paymentStatus || 'Pending'}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 text-xs font-bold text-ink/60">{order.timeSlot || 'Standard'}</td>
                       <td className="p-4 font-black text-sm">₹{order.total?.toFixed(2)}</td>
@@ -3398,35 +3579,54 @@ export default function App() {
 
       {adminTab === 'Settings' && (
         <div className="flex flex-col gap-6">
-          <h3 className="text-2xl font-black">Admin Settings</h3>
-          <Card className="p-6 flex flex-col gap-6">
-            <div className="flex justify-between items-center p-4 bg-bg rounded-2xl">
-              <div>
-                <p className="font-bold">Maintenance Mode</p>
-                <p className="text-xs text-ink/40">Disable public access to the store</p>
-              </div>
-              <div className="w-12 h-6 bg-ink/10 rounded-full relative cursor-pointer">
-                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
-              </div>
+          <h3 className="text-2xl font-black">Admin Payment Settings</h3>
+          <Card className="p-6 flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-black uppercase text-ink/40">Merchant Name</label>
+              <input
+                type="text"
+                value={paymentConfig.merchantName}
+                onChange={(e) => setPaymentConfig(prev => ({ ...prev, merchantName: e.target.value }))}
+                className="w-full bg-bg rounded-2xl px-4 py-3 outline-none font-bold"
+                placeholder="FreshFlow"
+              />
             </div>
-            <div className="flex justify-between items-center p-4 bg-bg rounded-2xl">
-              <div>
-                <p className="font-bold">Automatic Backups</p>
-                <p className="text-xs text-ink/40">Backup database every 24 hours</p>
-              </div>
-              <div className="w-12 h-6 bg-primary rounded-full relative cursor-pointer">
-                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
-              </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-black uppercase text-ink/40">UPI ID</label>
+              <input
+                type="text"
+                value={paymentConfig.upiId}
+                onChange={(e) => setPaymentConfig(prev => ({ ...prev, upiId: e.target.value }))}
+                className="w-full bg-bg rounded-2xl px-4 py-3 outline-none font-bold"
+                placeholder="merchant@upi"
+              />
             </div>
-            <div className="flex justify-between items-center p-4 bg-bg rounded-2xl">
-              <div>
-                <p className="font-bold">AI Prediction Engine</p>
-                <p className="text-xs text-ink/40">Enable smart basket suggestions</p>
-              </div>
-              <div className="w-12 h-6 bg-primary rounded-full relative cursor-pointer">
-                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
-              </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-black uppercase text-ink/40">Upload QR</label>
+              <label className="w-full bg-bg rounded-2xl px-4 py-3 flex items-center justify-center gap-2 cursor-pointer hover:bg-black/5 transition-colors border border-dashed border-black/20">
+                <ICONS.Camera size={18} className="text-ink/40" />
+                <span className="text-sm font-bold text-ink/60">Select QR Image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => setPaymentConfig(prev => ({ ...prev, qrImage: String(reader.result || '') }));
+                    reader.readAsDataURL(file);
+                  }}
+                />
+              </label>
+              {paymentConfig.qrImage && (
+                <img src={paymentConfig.qrImage} alt="QR Preview" className="w-40 h-40 object-contain rounded-xl border border-black/5 p-2 bg-white" />
+              )}
             </div>
+            <Button onClick={handleSavePaymentConfig} disabled={isSavingPaymentConfig} className="w-full">
+              {isSavingPaymentConfig ? 'Saving...' : 'Save Payment Settings'}
+            </Button>
+            <p className="text-xs text-ink/50 font-bold">Razorpay is auto-marked as paid. UPI and QR are manually verified by admin.</p>
           </Card>
         </div>
       )}
