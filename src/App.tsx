@@ -175,6 +175,11 @@ export default function App() {
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    const saved = localStorage.getItem('recentSearches');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [sortBy, setSortBy] = useState('relevance');
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [showFilters, setShowFilters] = useState(false);
@@ -292,6 +297,39 @@ export default function App() {
   const handleSearchInputChange = (value: string) => {
     setSearchInput(value);
     setSearchQuery(value);
+    setShowSearchSuggestions(true);
+  };
+
+  const handleSearchSubmit = (query: string) => {
+    if (query.trim()) {
+      const updated = [query, ...recentSearches.filter(s => s !== query)].slice(0, 5);
+      setRecentSearches(updated);
+      localStorage.setItem('recentSearches', JSON.stringify(updated));
+    }
+    setShowSearchSuggestions(false);
+  };
+
+  const getCategoryFilterCounts = () => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const counts: any = {};
+    
+    categories.forEach(cat => {
+      const count = products.filter(p => {
+        const productName = String(p?.name || '').toLowerCase();
+        const productCategory = String(p?.category || '').toLowerCase();
+        const productDescription = String(p?.description || '').toLowerCase();
+        const productPrice = Number(p?.price || 0);
+        
+        const matchesSearch = !normalizedQuery || productName.includes(normalizedQuery) || productCategory.includes(normalizedQuery) || productDescription.includes(normalizedQuery);
+        const matchesCategory = productCategory === cat.name.toLowerCase();
+        const matchesPrice = productPrice >= priceRange[0] && productPrice <= priceRange[1];
+        
+        return matchesSearch && matchesCategory && matchesPrice;
+      }).length;
+      counts[cat.name] = count;
+    });
+    
+    return counts;
   };
 
   // --- Effects ---
@@ -1193,22 +1231,70 @@ export default function App() {
           type="text"
           value={searchInput}
           onChange={(e) => handleSearchInputChange(e.target.value)}
+          onFocus={() => setShowSearchSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(searchInput)}
           placeholder="Search products in shop..."
           autoComplete="off"
           className="w-full bg-white p-3 pl-11 rounded-2xl shadow-sm border border-black/5 outline-none focus:ring-2 ring-primary/20 text-sm font-semibold"
         />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-        {['All', ...categories.map(c => c.name)].map(cat => (
-          <button 
-            key={cat} 
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${selectedCategory === cat ? 'bg-primary text-white' : 'bg-white text-ink/40 border border-black/5'}`}
-          >
-            {cat}
-          </button>
-        ))}
+      <div className="relative">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+          {['All', ...categories.map(c => c.name)].map(cat => {
+            const filterCounts = getCategoryFilterCounts();
+            const count = cat === 'All' ? filteredProducts.length : filterCounts[cat] || 0;
+            return (
+              <button 
+                key={cat} 
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 ${selectedCategory === cat ? 'bg-primary text-white' : 'bg-white text-ink/40 border border-black/5'}`}
+              >
+                {cat}
+                <span className={`px-2 py-0.5 rounded-full text-xs font-black ${selectedCategory === cat ? 'bg-white/20' : 'bg-black/5'}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {showSearchSuggestions && searchInput && (
+        <div className="bg-white rounded-2xl shadow-lg border border-black/5 overflow-hidden">
+          {searchInput.length > 0 && recentSearches.length > 0 && (
+            <div>
+              <div className="px-4 py-2 border-b border-black/5 text-xs font-bold text-ink/40 uppercase bg-bg/50">
+                Recent Searches
+              </div>
+              {recentSearches.map((search, i) => (
+                <button 
+                  key={i}
+                  onClick={() => {
+                    setSearchInput(search);
+                    setSearchQuery(search);
+                    handleSearchSubmit(search);
+                  }}
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-bg transition-all text-left border-b border-black/5 last:border-b-0"
+                >
+                  <ICONS.Clock size={16} className="text-ink/40" />
+                  <span className="flex-1 text-sm font-bold">{search}</span>
+                  <ICONS.ArrowUpRight size={14} className="text-ink/20" />
+                </button>
+              ))}
+            </div>
+          )}
+          {searchInput.length > 0 && filteredProducts.length === 0 && (
+            <div className="px-4 py-4 text-center">
+              <p className="text-xs font-bold text-ink/40">No matching products</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-bold text-ink/40 uppercase">Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -1227,8 +1313,52 @@ export default function App() {
             </div>
           </Card>
         )) : (
-          <div className="col-span-2 text-center py-20">
-            <p className="text-ink/40 font-bold">No products found</p>
+          <div className="col-span-2 text-center py-12">
+            <ICONS.Package size={64} className="text-ink/10 mx-auto mb-4" />
+            <p className="text-ink/40 font-bold mb-2">No products found</p>
+            <p className="text-xs text-ink/20 mb-6">Try different {searchQuery ? 'keywords' : 'filters'} or browse by category</p>
+            {searchQuery && (
+              <div className="flex gap-2 flex-wrap justify-center mb-6">
+                <Button 
+                  variant="outline" 
+                  className="text-xs px-3 py-1"
+                  onClick={() => {
+                    setSearchInput('');
+                    setSearchQuery('');
+                    setShowSearchSuggestions(false);
+                  }}
+                >
+                  Clear Search
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="text-xs px-3 py-1"
+                  onClick={() => setSelectedCategory('All')}
+                >
+                  All Products
+                </Button>
+              </div>
+            )}
+            {recentSearches.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-black/5">
+                <p className="text-xs font-bold text-ink/40 uppercase mb-3">Recent Searches</p>
+                <div className="flex gap-2 flex-wrap justify-center">
+                  {recentSearches.map((search, i) => (
+                    <button 
+                      key={i}
+                      onClick={() => {
+                        setSearchInput(search);
+                        setSearchQuery(search);
+                        handleSearchSubmit(search);
+                      }}
+                      className="px-3 py-1 bg-bg rounded-full text-xs font-bold hover:bg-primary/10 transition-all"
+                    >
+                      {search}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
