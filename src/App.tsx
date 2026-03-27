@@ -3912,7 +3912,6 @@ export default function App() {
         <div className="flex flex-col gap-6">
           <div className="flex justify-between items-center">
             <h3 className="text-2xl font-black">Product Inventory</h3>
-            <Button className="px-6" onClick={() => { setEditingProduct(null); setNewProduct(INITIAL_PRODUCT_STATE); setIsAddProductModalOpen(true); }}>Add Product</Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map(product => (
