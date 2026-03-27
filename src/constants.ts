@@ -60,7 +60,9 @@ import {
   AlertTriangle,
   ShoppingBag,
   Edit2,
-  X
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export const CATEGORIES = [
@@ -200,5 +202,7 @@ export const ICONS = {
   AlertTriangle,
   ShoppingBag,
   Edit2,
-  X
+  X,
+  Eye,
+  EyeOff
 };

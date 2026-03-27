@@ -289,15 +289,12 @@ export default function App() {
     }
   };
 
+  const handleSearchInputChange = (value: string) => {
+    setSearchInput(value);
+    setSearchQuery(value);
+  };
+
   // --- Effects ---
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setSearchQuery(searchInput);
-    }, 120);
-
-    return () => window.clearTimeout(timer);
-  }, [searchInput]);
-
   useEffect(() => {
     let unsubscribeProfile: (() => void) | null = null;
 
@@ -798,6 +795,7 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isSignUp, setIsSignUp] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
@@ -878,13 +876,23 @@ export default function App() {
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-xs font-bold uppercase tracking-widest text-ink/40 ml-2">Password</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••" 
-                className="bg-bg p-4 rounded-2xl outline-none focus:ring-2 ring-primary/20 transition-all" 
-              />
+              <div className="relative">
+                <input 
+                  type={showPassword ? 'text' : 'password'} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••" 
+                  className="w-full bg-bg p-4 pr-12 rounded-2xl outline-none focus:ring-2 ring-primary/20 transition-all" 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-ink/50 hover:text-primary transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <ICONS.EyeOff size={18} /> : <ICONS.Eye size={18} />}
+                </button>
+              </div>
             </div>
             <Button disabled={isLoading} type="submit">
               {isLoading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
@@ -961,7 +969,7 @@ export default function App() {
         <input 
           type="text" 
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => handleSearchInputChange(e.target.value)}
           placeholder="Search fresh groceries..." 
           autoComplete="off"
           className="w-full bg-white p-4 pl-12 pr-24 rounded-2xl shadow-sm border border-black/5 outline-none focus:ring-2 ring-primary/20"
@@ -1184,7 +1192,7 @@ export default function App() {
         <input
           type="text"
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => handleSearchInputChange(e.target.value)}
           placeholder="Search products in shop..."
           autoComplete="off"
           className="w-full bg-white p-3 pl-11 rounded-2xl shadow-sm border border-black/5 outline-none focus:ring-2 ring-primary/20 text-sm font-semibold"
