@@ -668,10 +668,23 @@ export default function App() {
   };
 
   const filteredProducts = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
     let result = products.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
-      const matchesPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
+      const productName = String(p?.name || '').toLowerCase();
+      const productCategory = String(p?.category || '').toLowerCase();
+      const productDescription = String(p?.description || '').toLowerCase();
+      const productPrice = Number(p?.price || 0);
+
+      const matchesSearch =
+        !normalizedQuery ||
+        productName.includes(normalizedQuery) ||
+        productCategory.includes(normalizedQuery) ||
+        productDescription.includes(normalizedQuery);
+      const matchesCategory =
+        selectedCategory === 'All' ||
+        productCategory === selectedCategory.toLowerCase();
+      const matchesPrice = productPrice >= priceRange[0] && productPrice <= priceRange[1];
       return matchesSearch && matchesCategory && matchesPrice;
     });
 
@@ -959,6 +972,45 @@ export default function App() {
         </div>
       </div>
 
+      {searchInput.trim() ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xl font-black">Search Results</h4>
+            <button onClick={() => setScreen('listing')} className="text-primary font-bold text-sm">Open in Shop</button>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {filteredProducts.length > 0 ? filteredProducts.slice(0, 6).map(product => (
+              <Card key={product.id} className="flex flex-col gap-3 group">
+                <div className="relative overflow-hidden rounded-2xl">
+                  <img
+                    src={product.image}
+                    className="w-full aspect-square object-cover transition-transform group-hover:scale-110"
+                    alt={product.name}
+                    referrerPolicy="no-referrer"
+                    onClick={() => { setSelectedProduct(product); setScreen('detail'); }}
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-bold truncate">{product.name}</p>
+                  <p className="text-xs text-ink/40">{product.unit}</p>
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="text-lg font-black text-primary">₹{product.price}</p>
+                    <button onClick={() => addToCart(product.id)} className="w-8 h-8 gradient-primary text-white rounded-lg flex items-center justify-center shadow-md active:scale-90 transition-all">
+                      <ICONS.Plus size={16} />
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            )) : (
+              <div className="col-span-2 text-center py-10">
+                <p className="text-ink/40 font-bold">No products found</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+
       {/* Banner */}
       <div className="gradient-primary rounded-3xl p-6 text-white relative overflow-hidden">
         <div className="relative z-10">
@@ -1061,6 +1113,8 @@ export default function App() {
           ))}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 
