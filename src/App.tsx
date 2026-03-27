@@ -3496,7 +3496,7 @@ export default function App() {
       </div>
 
       <div className="flex gap-4 overflow-x-auto hide-scrollbar border-b border-black/5 pb-2">
-        {['Analytics', 'Orders', 'Inventory', 'Users', 'Vendors', 'Products', 'Offers', 'Support', 'Settings'].map(tab => (
+        {['Analytics', 'Orders', 'Inventory', 'Users', 'Vendors', 'Products', 'Offers', 'Settings'].map(tab => (
           <button 
             key={tab} 
             onClick={() => setAdminTab(tab)}
@@ -3841,72 +3841,6 @@ export default function App() {
         </div>
       )}
 
-      {adminTab === 'Support' && (
-        <div className="flex flex-col gap-6 h-[600px]">
-          <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-black">Customer Support</h3>
-            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase">5 Active Chats</span>
-          </div>
-          <div className="flex-1 flex gap-6 overflow-hidden">
-            <Card className="w-80 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-black/5 bg-bg/50">
-                <input type="text" placeholder="Search chats..." className="w-full bg-white p-2 rounded-lg text-xs font-bold outline-none" />
-              </div>
-              <div className="flex-1 overflow-y-auto divide-y divide-black/5">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <button key={i} className={`w-full p-4 flex gap-3 items-center hover:bg-bg transition-all ${i === 1 ? 'bg-primary/5 border-l-4 border-primary' : ''}`}>
-                    <img src={`https://i.pravatar.cc/150?u=${i + 10}`} className="w-10 h-10 rounded-xl object-cover" alt="User" />
-                    <div className="flex-1 text-left">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-black">User {i}</span>
-                        <span className="text-[10px] text-ink/40">12:45</span>
-                      </div>
-                      <p className="text-xs text-ink/40 font-bold truncate">My order hasn't arrived yet...</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </Card>
-            <Card className="flex-1 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-black/5 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <img src="https://i.pravatar.cc/150?u=11" className="w-10 h-10 rounded-xl object-cover" alt="User" />
-                  <div>
-                    <h4 className="font-black text-sm">User 1</h4>
-                    <p className="text-[10px] text-green-500 font-black uppercase">Online</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button className="p-2 hover:bg-bg rounded-lg"><ICONS.Phone size={18} className="text-ink/40" /></button>
-                  <button className="p-2 hover:bg-bg rounded-lg"><ICONS.Video size={18} className="text-ink/40" /></button>
-                </div>
-              </div>
-              <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-bg/20">
-                <div className="flex justify-center"><span className="text-[10px] font-black text-ink/20 uppercase tracking-widest">Today</span></div>
-                <div className="flex gap-3 max-w-[80%]">
-                  <img src="https://i.pravatar.cc/150?u=11" className="w-8 h-8 rounded-lg object-cover" alt="User" />
-                  <div className="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm">
-                    <p className="text-sm font-bold">Hello, I'm having trouble with my order #9281. It shows delivered but I haven't received it.</p>
-                    <span className="text-[10px] text-ink/20 font-bold mt-1 block">12:40 PM</span>
-                  </div>
-                </div>
-                <div className="flex gap-3 max-w-[80%] self-end flex-row-reverse">
-                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-black text-[10px]">FF</div>
-                  <div className="gradient-primary text-white p-3 rounded-2xl rounded-tr-none shadow-lg">
-                    <p className="text-sm font-bold">Hi there! I'm sorry to hear that. Let me check the delivery status for you right away.</p>
-                    <span className="text-[10px] text-white/60 font-bold mt-1 block text-right">12:42 PM</span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 border-t border-black/5 flex gap-3 items-center">
-                <button className="p-2 bg-bg rounded-xl text-ink/40"><ICONS.Plus size={20} /></button>
-                <input type="text" placeholder="Type your message..." className="flex-1 bg-bg p-3 rounded-xl text-sm font-bold outline-none" />
-                <button className="w-10 h-10 gradient-primary text-white rounded-xl flex items-center justify-center shadow-lg"><ICONS.Send size={20} /></button>
-              </div>
-            </Card>
-          </div>
-        </div>
-      )}
 
       {adminTab === 'Products' && (
         <div className="flex flex-col gap-6">
