@@ -1,0 +1,32 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="92" y1="92" x2="928" y2="928" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7CEB55"/>
+      <stop offset="0.48" stop-color="#2DBB58"/>
+      <stop offset="1" stop-color="#067E4D"/>
+    </linearGradient>
+    <linearGradient id="cart" x1="240" y1="354" x2="712" y2="668" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E8FFF1"/>
+    </linearGradient>
+    <filter id="shadow" x="168" y="178" width="688" height="666" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="20" flood-color="#024227" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+  <rect x="56" y="56" width="912" height="912" rx="204" fill="url(#bg)"/>
+  <g filter="url(#shadow)">
+    <path d="M260 396H730L700 614H328L298 452H250" stroke="url(#cart)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M276 694C376 648 488 648 600 692" stroke="#D9FFD5" stroke-width="22" stroke-linecap="round"/>
+    <path d="M338 470H684" stroke="#D9FFD5" stroke-width="18" stroke-linecap="round"/>
+    <path d="M356 526H670" stroke="#D9FFD5" stroke-width="18" stroke-linecap="round"/>
+    <path d="M376 582H654" stroke="#D9FFD5" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="418" cy="706" r="26" fill="#F6FFF7"/>
+    <circle cx="588" cy="706" r="26" fill="#F6FFF7"/>
+    <circle cx="418" cy="706" r="13" fill="#0F9659"/>
+    <circle cx="588" cy="706" r="13" fill="#0F9659"/>
+    <ellipse cx="418" cy="308" rx="44" ry="34" fill="#F05F46"/>
+    <ellipse cx="500" cy="296" rx="44" ry="34" fill="#FFAA32"/>
+    <ellipse cx="574" cy="286" rx="34" ry="28" fill="#95F86D"/>
+    <ellipse cx="346" cy="290" rx="26" ry="22" fill="#95F86D"/>
+  </g>
+</svg>

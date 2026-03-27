@@ -1,0 +1,41 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="igBg" x1="0" y1="0" x2="1080" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FFF8"/>
+      <stop offset="1" stop-color="#ECFFF2"/>
+    </linearGradient>
+    <linearGradient id="cta" x1="700" y1="842" x2="968" y2="942" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#43C857"/>
+      <stop offset="1" stop-color="#0C965D"/>
+    </linearGradient>
+    <linearGradient id="logoStroke" x1="170" y1="130" x2="330" y2="290" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51D75D"/>
+      <stop offset="1" stop-color="#08965B"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1080" fill="url(#igBg)"/>
+  <circle cx="940" cy="120" r="240" fill="#DFFFE8"/>
+  <circle cx="120" cy="980" r="220" fill="#D4F9E1"/>
+
+  <g transform="translate(130 120)">
+    <path d="M0 90H184L168 172H28L16 120H2" stroke="url(#logoStroke)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="52" cy="202" r="9" fill="#0A8A54"/>
+    <circle cx="132" cy="202" r="9" fill="#0A8A54"/>
+    <ellipse cx="66" cy="66" rx="14" ry="10" fill="#F0664E"/>
+    <ellipse cx="96" cy="62" rx="15" ry="11" fill="#F79A28"/>
+    <ellipse cx="124" cy="56" rx="10" ry="8" fill="#80D85C"/>
+  </g>
+
+  <text x="340" y="265" font-family="Poppins, Inter, Arial, sans-serif" font-size="102" font-weight="700" font-style="italic" fill="#159B58">Fresh</text>
+  <text x="620" y="265" font-family="Poppins, Inter, Arial, sans-serif" font-size="102" font-weight="700" font-style="italic" fill="#F5861F">Flow</text>
+
+  <text x="132" y="430" font-family="Poppins, Inter, Arial, sans-serif" font-size="88" font-weight="700" fill="#1E2D22">Fresh groceries</text>
+  <text x="132" y="520" font-family="Poppins, Inter, Arial, sans-serif" font-size="88" font-weight="700" fill="#1E2D22">in minutes.</text>
+
+  <text x="132" y="620" font-family="Inter, Arial, sans-serif" font-size="38" font-weight="500" fill="#466257">Smart Grocery, Smarter Life</text>
+
+  <rect x="132" y="780" width="840" height="170" rx="42" fill="#FFFFFF"/>
+  <text x="176" y="850" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="600" fill="#30503E">First order? Get 25% OFF</text>
+  <rect x="700" y="816" width="232" height="96" rx="24" fill="url(#cta)"/>
+  <text x="760" y="875" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="700" fill="#FFFFFF">Install</text>
+</svg>

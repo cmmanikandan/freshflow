@@ -1,0 +1,40 @@
+<svg width="1600" height="600" viewBox="0 0 1600 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#066E43"/>
+      <stop offset="0.52" stop-color="#169556"/>
+      <stop offset="1" stop-color="#80DA53"/>
+    </linearGradient>
+    <radialGradient id="heroGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1320 130) rotate(128) scale(480 360)">
+      <stop stop-color="#D6FF7B" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#D6FF7B" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="600" fill="url(#bg)"/>
+  <rect width="1600" height="600" fill="url(#heroGlow)"/>
+
+  <g transform="translate(92 138)">
+    <path d="M10 92H268L240 214H68L48 126H10" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 244C88 214 152 214 220 238" stroke="#D8FFD1" stroke-width="12" stroke-linecap="round"/>
+    <path d="M84 136H238" stroke="#D8FFD1" stroke-width="8" stroke-linecap="round"/>
+    <path d="M96 166H226" stroke="#D8FFD1" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="98" cy="250" r="11" fill="#FFFFFF"/>
+    <circle cx="198" cy="250" r="11" fill="#FFFFFF"/>
+    <ellipse cx="108" cy="72" rx="16" ry="12" fill="#F06047"/>
+    <ellipse cx="142" cy="66" rx="16" ry="12" fill="#F9A12E"/>
+    <ellipse cx="176" cy="58" rx="12" ry="9" fill="#94FB6E"/>
+  </g>
+
+  <text x="410" y="300" font-family="Poppins, Inter, Arial, sans-serif" font-size="126" font-weight="700" font-style="italic" fill="#F3FFF5">Fresh</text>
+  <text x="764" y="300" font-family="Poppins, Inter, Arial, sans-serif" font-size="126" font-weight="700" font-style="italic" fill="#FFAA35">Flow</text>
+  <text x="410" y="366" font-family="Inter, Arial, sans-serif" font-size="50" font-style="italic" fill="#E6F6EA">Fresh groceries delivered fast</text>
+
+  <g opacity="0.92" transform="translate(1148 266)">
+    <ellipse cx="82" cy="226" rx="150" ry="36" fill="#0A5635" fill-opacity="0.42"/>
+    <rect x="0" y="72" width="164" height="146" rx="12" fill="#B88A53"/>
+    <ellipse cx="36" cy="70" rx="30" ry="34" fill="#FF824C"/>
+    <ellipse cx="76" cy="50" rx="34" ry="34" fill="#FFFFFF"/>
+    <ellipse cx="114" cy="66" rx="36" ry="30" fill="#A6F55A"/>
+    <ellipse cx="138" cy="98" rx="26" ry="20" fill="#F2A73A"/>
+  </g>
+</svg>

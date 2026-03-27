@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FreshFlow Brand Kit</title>
+    <style>
+      :root {
+        --bg: #f2f4f7;
+        --card: #f7f9fc;
+        --line: #d8dee7;
+        --text: #6b737d;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        padding: 22px;
+        background: var(--bg);
+        font-family: Inter, Arial, sans-serif;
+      }
+
+      .grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--card);
+        padding: 16px;
+        min-height: 220px;
+      }
+
+      .card h3 {
+        margin: 0 0 16px;
+        font-size: 32px;
+        color: var(--text);
+        font-weight: 600;
+        letter-spacing: 1px;
+      }
+
+      .slot {
+        width: 100%;
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .slot img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .tall .slot { min-height: 460px; }
+
+      .dark-slab {
+        width: 100%;
+        border-radius: 12px;
+        padding: 14px;
+        background: linear-gradient(140deg, #0c3f2b, #0f6a45);
+      }
+
+      .banner { grid-column: 1 / -1; }
+      .banner .slot { min-height: 230px; }
+
+      @media (max-width: 980px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="grid">
+      <section class="card">
+        <h3>LOGO</h3>
+        <div class="slot"><img src="/brand/logo-dark.svg" alt="FreshFlow logo" /></div>
+      </section>
+
+      <section class="card">
+        <h3>APP ICON</h3>
+        <div class="slot"><img src="/brand/app-icon.svg" alt="FreshFlow app icon" style="max-width: 230px" /></div>
+      </section>
+
+      <section class="card">
+        <h3>FAVICON</h3>
+        <div class="slot"><img src="/brand/favicon.svg" alt="FreshFlow favicon" style="max-width: 140px" /></div>
+      </section>
+
+      <section class="card tall">
+        <h3>SPLASH SCREEN</h3>
+        <div class="slot"><img src="/brand/splash-screen.svg" alt="FreshFlow splash screen" style="max-width: 215px" /></div>
+      </section>
+
+      <section class="card">
+        <h3>DARK MODE LOGO</h3>
+        <div class="slot"><div class="dark-slab"><img src="/brand/logo-dark.svg" alt="FreshFlow dark mode logo" /></div></div>
+      </section>
+
+      <section class="card">
+        <h3>MONOCHROME LOGOS</h3>
+        <div class="slot" style="display: grid; gap: 10px">
+          <img src="/brand/logo-mono-black.svg" alt="FreshFlow monochrome black" />
+          <div style="background: #181c22; border-radius: 10px; padding: 10px"><img src="/brand/logo-mono-white.svg" alt="FreshFlow monochrome white" /></div>
+        </div>
+      </section>
+
+      <section class="card banner">
+        <h3>PROMOTIONAL BANNER</h3>
+        <div class="slot"><img src="/brand/social/banner.svg" alt="FreshFlow promotional banner" /></div>
+      </section>
+    </main>
+  </body>
+</html>

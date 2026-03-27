@@ -1,0 +1,12 @@
+<svg width="1200" height="360" viewBox="0 0 1200 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#12171D" stroke="#12171D">
+    <path d="M54 142H254L232 244H92L76 168H52" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M58 260C110 234 168 232 224 254" stroke-width="15" stroke-linecap="round"/>
+    <circle cx="122" cy="268" r="12"/>
+    <circle cx="200" cy="268" r="12"/>
+    <ellipse cx="126" cy="112" rx="18" ry="14"/>
+    <ellipse cx="162" cy="108" rx="18" ry="14"/>
+    <ellipse cx="196" cy="100" rx="14" ry="11"/>
+  </g>
+  <text x="290" y="210" font-family="Poppins, Inter, Arial, sans-serif" font-size="124" font-weight="700" font-style="italic" fill="#12171D">FreshFlow</text>
+</svg>

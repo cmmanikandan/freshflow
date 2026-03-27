@@ -1,0 +1,30 @@
+<svg width="1200" height="360" viewBox="0 0 1200 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="textGreen" x1="326" y1="118" x2="712" y2="244" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D6FFE0"/>
+      <stop offset="1" stop-color="#82F0A1"/>
+    </linearGradient>
+    <linearGradient id="textOrange" x1="706" y1="118" x2="1024" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFC564"/>
+      <stop offset="1" stop-color="#F08D16"/>
+    </linearGradient>
+    <linearGradient id="waveGreen" x1="44" y1="94" x2="248" y2="284" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#95FF73"/>
+      <stop offset="1" stop-color="#15A35D"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <path d="M54 142H254L232 244H92L76 168H52" stroke="#F8FFF9" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M58 260C110 234 168 232 224 254" stroke="url(#waveGreen)" stroke-width="15" stroke-linecap="round"/>
+    <path d="M104 188H220" stroke="#F8FFF9" stroke-width="8" stroke-linecap="round"/>
+    <path d="M112 214H212" stroke="#F8FFF9" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="122" cy="268" r="12" fill="#F8FFF9"/>
+    <circle cx="200" cy="268" r="12" fill="#F8FFF9"/>
+    <ellipse cx="126" cy="112" rx="18" ry="14" fill="#FF614A"/>
+    <ellipse cx="162" cy="108" rx="18" ry="14" fill="#FFAA30"/>
+    <ellipse cx="196" cy="100" rx="14" ry="11" fill="#8AF46C"/>
+  </g>
+  <text x="290" y="210" font-family="Poppins, Inter, Arial, sans-serif" font-size="124" font-weight="700" font-style="italic" fill="url(#textGreen)">Fresh</text>
+  <text x="690" y="210" font-family="Poppins, Inter, Arial, sans-serif" font-size="124" font-weight="700" font-style="italic" fill="url(#textOrange)">Flow</text>
+  <text x="292" y="274" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="500" fill="#E6F8EB">Smart Grocery, Smarter Life</text>
+</svg>
