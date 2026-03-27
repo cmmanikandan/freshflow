@@ -1232,8 +1232,13 @@ export default function App() {
           value={searchInput}
           onChange={(e) => handleSearchInputChange(e.target.value)}
           onFocus={() => setShowSearchSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(searchInput)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearchSubmit(searchInput);
+            } else if (e.key === 'Escape') {
+              setShowSearchSuggestions(false);
+            }
+          }}
           placeholder="Search products in shop..."
           autoComplete="off"
           className="w-full bg-white p-3 pl-11 rounded-2xl shadow-sm border border-black/5 outline-none focus:ring-2 ring-primary/20 text-sm font-semibold"
@@ -1262,7 +1267,7 @@ export default function App() {
       </div>
 
       {showSearchSuggestions && searchInput && (
-        <div className="bg-white rounded-2xl shadow-lg border border-black/5 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-lg border border-black/5 overflow-hidden" onMouseDown={(e) => e.preventDefault()}>
           {searchInput.length > 0 && recentSearches.length > 0 && (
             <div>
               <div className="px-4 py-2 border-b border-black/5 text-xs font-bold text-ink/40 uppercase bg-bg/50">
@@ -1275,6 +1280,7 @@ export default function App() {
                     setSearchInput(search);
                     setSearchQuery(search);
                     handleSearchSubmit(search);
+                                      setShowSearchSuggestions(false);
                   }}
                   className="w-full px-4 py-3 flex items-center gap-3 hover:bg-bg transition-all text-left border-b border-black/5 last:border-b-0"
                 >
