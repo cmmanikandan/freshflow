@@ -172,6 +172,7 @@ export default function App() {
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('relevance');
@@ -256,18 +257,18 @@ export default function App() {
   const [couponCode, setCouponCode] = useState('');
   const [isCouponApplied, setIsCouponApplied] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [aiPrompt, setAiPrompt] = useState('');
+  const [basketPrompt, setBasketPrompt] = useState('');
   const [isGeneratingBasket, setIsGeneratingBasket] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
 
   const generateBasket = async () => {
-    if (!aiPrompt.trim()) return;
+    if (!basketPrompt.trim()) return;
     setIsGeneratingBasket(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `I want to cook: ${aiPrompt}. Based on these available products: ${JSON.stringify(PRODUCTS.map(p => ({ id: p.id, name: p.name, category: p.category, description: p.description })))}. Suggest which products I should buy to fulfill this request. Return ONLY a JSON array of product IDs.`,
+        contents: `I want to cook: ${basketPrompt}. Based on these available products: ${JSON.stringify(PRODUCTS.map(p => ({ id: p.id, name: p.name, category: p.category, description: p.description })))}. Suggest which products I should buy to fulfill this request. Return ONLY a JSON array of product IDs.`,
         config: {
           systemInstruction: "You are a helpful grocery shopping assistant. Given a cooking request and a list of available products, suggest the best products to buy to fulfill the request. Return only the JSON array of product IDs.",
           responseMimeType: "application/json",
@@ -289,6 +290,14 @@ export default function App() {
   };
 
   // --- Effects ---
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
   useEffect(() => {
     let unsubscribeProfile: (() => void) | null = null;
 
@@ -938,9 +947,10 @@ export default function App() {
         <ICONS.Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ink/40" size={20} />
         <input 
           type="text" 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search fresh groceries..." 
+          autoComplete="off"
           className="w-full bg-white p-4 pl-12 pr-24 rounded-2xl shadow-sm border border-black/5 outline-none focus:ring-2 ring-primary/20"
         />
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-3 text-primary">
@@ -1058,7 +1068,7 @@ export default function App() {
     <div className="pb-32 pt-8 px-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => { setScreen('home'); setSelectedCategory('All'); setSearchQuery(''); }} className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/5">
+          <button onClick={() => { setScreen('home'); setSelectedCategory('All'); setSearchInput(''); setSearchQuery(''); }} className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/5">
             <ICONS.ChevronLeft size={20} />
           </button>
           <h2 className="text-2xl font-black">Shop All</h2>
@@ -1114,6 +1124,18 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="relative">
+        <ICONS.Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ink/40" size={18} />
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search products in shop..."
+          autoComplete="off"
+          className="w-full bg-white p-3 pl-11 rounded-2xl shadow-sm border border-black/5 outline-none focus:ring-2 ring-primary/20 text-sm font-semibold"
+        />
+      </div>
 
       <div className="flex gap-2 overflow-x-auto hide-scrollbar">
         {['All', ...categories.map(c => c.name)].map(cat => (
@@ -1264,14 +1286,15 @@ export default function App() {
           <div className="flex gap-2">
             <input 
               type="text" 
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
+              value={basketPrompt}
+              onChange={(e) => setBasketPrompt(e.target.value)}
               placeholder="e.g. Italian dinner for 4, Keto snacks..." 
+              autoComplete="off"
               className="flex-1 bg-bg p-4 rounded-2xl outline-none text-sm font-bold border-2 border-transparent focus:border-primary/20 transition-all"
             />
             <button 
               onClick={generateBasket}
-              disabled={isGeneratingBasket || !aiPrompt.trim()}
+              disabled={isGeneratingBasket || !basketPrompt.trim()}
               className="w-14 h-14 gradient-primary text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all disabled:opacity-50"
             >
               {isGeneratingBasket ? (
@@ -1292,7 +1315,7 @@ export default function App() {
               onClick={() => {
                 aiSuggestions.forEach(p => addToCart(p.id));
                 setAiSuggestions([]);
-                setAiPrompt('');
+                setBasketPrompt('');
               }}
               className="text-xs font-black text-primary uppercase"
             >
