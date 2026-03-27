@@ -219,6 +219,7 @@ export default function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [editProfileData, setEditProfileData] = useState({ 
+    photoURL: '',
     name: '', 
     phone: '', 
     street: '', 
@@ -2015,6 +2016,7 @@ export default function App() {
               className="p-4 flex justify-between items-center cursor-pointer hover:bg-black/5 transition-colors"
               onClick={() => {
                 setEditProfileData({ 
+                  photoURL: profile?.photoURL || '',
                   name: profile?.name || '', 
                   phone: profile?.phone || '',
                   street: profile?.street || '',
@@ -3313,9 +3315,11 @@ export default function App() {
                       <td className="p-4">
                         <div className="flex flex-col gap-2">
                           <span className="text-[10px] font-bold text-ink/40 uppercase">{order.paymentType || order.paymentMethod || 'Unknown'}</span>
-                          {isManualPaymentMethod(order.paymentType) ? (
+                          {(isManualPaymentMethod(order.paymentType) ||
+                            ['Cash', 'COD'].includes(order.paymentType || '') ||
+                            /cash|cod|upi|qr/i.test(order.paymentMethod || '')) ? (
                             <select
-                              value={order.paymentStatus || 'Unpaid'}
+                              value={order.paymentStatus || 'Pending'}
                               onChange={async (e) => {
                                 try {
                                   const newPaymentStatus = e.target.value;
@@ -3329,6 +3333,7 @@ export default function App() {
                               }}
                               className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase border-none focus:ring-0 ${order.paymentStatus === 'Paid' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}
                             >
+                              <option value="Pending">Pending</option>
                               <option value="Unpaid">Unpaid</option>
                               <option value="Paid">Paid</option>
                             </select>
@@ -3358,7 +3363,16 @@ export default function App() {
                           >
                             <ICONS.Trash2 size={16} />
                           </button>
-                          <button className="p-2 hover:bg-bg rounded-lg transition-all"><ICONS.ChevronRight size={16} /></button>
+                          <button
+                            onClick={() => {
+                              setSelectedOrderForBill(order);
+                              setIsBillModalOpen(true);
+                            }}
+                            className="p-2 hover:bg-bg rounded-lg transition-all"
+                            title="View invoice"
+                          >
+                            <ICONS.ChevronRight size={16} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -4073,6 +4087,40 @@ export default function App() {
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-ink/40 uppercase tracking-widest">Profile Photo</label>
+            <div className="flex items-center gap-3">
+              <img
+                src={editProfileData.photoURL || profile?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
+                alt="Profile"
+                className="w-14 h-14 rounded-xl object-cover border border-black/10"
+              />
+              <label className="px-3 py-2 bg-bg rounded-xl text-xs font-bold cursor-pointer hover:bg-black/5 transition-colors">
+                Upload
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      setEditProfileData({ ...editProfileData, photoURL: String(reader.result || '') });
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+              </label>
+            </div>
+            <input
+              type="text"
+              placeholder="Or paste image URL"
+              value={editProfileData.photoURL}
+              onChange={(e) => setEditProfileData({ ...editProfileData, photoURL: e.target.value })}
+              className="bg-bg rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
             <label className="text-xs font-bold text-ink/40 uppercase tracking-widest">Full Name</label>
             <input 
               type="text" 
@@ -4164,6 +4212,7 @@ export default function App() {
               if (user) {
                 try {
                   await updateDoc(doc(db, 'users', user.uid), {
+                    photoURL: editProfileData.photoURL,
                     name: editProfileData.name,
                     phone: editProfileData.phone,
                     street: editProfileData.street,
