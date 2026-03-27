@@ -504,8 +504,10 @@ export default function App() {
       setIsAddressModalOpen(false);
       setEditingAddress(null);
       setNewAddress({ type: 'Home', details: '' });
+      showToast('Address saved');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+      console.error(error);
+      showToast('Failed to save address. Check Firestore rules.', 'error');
     }
   };
 
@@ -515,8 +517,10 @@ export default function App() {
       const userRef = doc(db, 'users', user.uid);
       const updatedAddresses = (profile.addresses || []).filter((_: any, i: number) => i !== index);
       await updateDoc(userRef, { addresses: updatedAddresses });
+      showToast('Address deleted');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+      console.error(error);
+      showToast('Failed to delete address', 'error');
     }
   };
 
@@ -528,8 +532,10 @@ export default function App() {
       await updateDoc(userRef, { paymentMethods: updatedPayments });
       setIsPaymentModalOpen(false);
       setNewPayment({ type: 'Visa', details: '', expiry: '' });
+      showToast('Payment method saved');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+      console.error(error);
+      showToast('Failed to save payment method', 'error');
     }
   };
 
@@ -539,8 +545,10 @@ export default function App() {
       const userRef = doc(db, 'users', user.uid);
       const updatedPayments = (profile.paymentMethods || []).filter((_: any, i: number) => i !== index);
       await updateDoc(userRef, { paymentMethods: updatedPayments });
+      showToast('Payment method removed');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+      console.error(error);
+      showToast('Failed to remove payment method', 'error');
     }
   };
 
@@ -638,7 +646,8 @@ export default function App() {
       );
       showToast('Payment settings saved');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, 'app_settings/payment_config');
+      console.error(error);
+      showToast('Failed to save payment settings. Deploy Firestore rules.', 'error');
     } finally {
       setIsSavingPaymentConfig(false);
     }
@@ -4167,7 +4176,8 @@ export default function App() {
                   setIsEditProfileModalOpen(false);
                   showToast('Profile updated successfully');
                 } catch (error) {
-                  handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+                  console.error(error);
+                  showToast('Failed to update profile. Check Firestore rules.', 'error');
                 }
               }
             }} 

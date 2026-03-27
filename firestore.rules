@@ -90,7 +90,7 @@ service cloud.firestore {
              data.total is number && data.total >= 0 &&
              data.items is list && data.items.size() < 50 &&
              data.createdAt is timestamp &&
-             (!('paymentStatus' in data) || data.paymentStatus in ['Paid', 'Pending']);
+             (!('paymentStatus' in data) || data.paymentStatus in ['Paid', 'Pending', 'Unpaid']);
     }
 
     // ===============================================================
@@ -101,8 +101,8 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
                     ((isOwner(userId) && request.resource.data.role == 'user') || isAdmin());
-      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
-                    ((isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin());
+      allow update: if isAuthenticated() && 
+                    ((isOwner(userId) && request.resource.data.uid == userId && request.resource.data.email is string) || isAdmin());
       allow delete: if isAdmin();
       
       match /subscriptions/{subId} {
@@ -141,6 +141,11 @@ service cloud.firestore {
     }
 
     match /offers/{offerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /app_settings/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
