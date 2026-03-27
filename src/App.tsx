@@ -109,7 +109,7 @@ const Card = ({ children, className = '', onClick }: any) => (
 );
 
 const Navbar = ({ active, setScreen }: { active: Screen, setScreen: (s: Screen) => void }) => (
-  <div className="fixed bottom-6 left-6 right-6 glass rounded-2xl p-4 flex justify-around items-center z-50">
+  <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl glass rounded-2xl p-4 flex justify-around items-center z-50">
     {[
       { id: 'home', icon: ICONS.Home, label: 'Home' },
       { id: 'listing', icon: ICONS.Search, label: 'Shop' },
@@ -238,6 +238,14 @@ export default function App() {
   const razorpayKeyId = (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || 'rzp_test_SJ47gyjCKEIpt2';
 
   const ORDER_STATUSES = ['Processing', 'Confirmed', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'];
+
+  const [isDesktopViewport, setIsDesktopViewport] = useState(() => window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktopViewport(window.innerWidth >= 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const [selectedDiet, setSelectedDiet] = useState('Keto');
   const [couponCode, setCouponCode] = useState('');
@@ -3363,12 +3371,12 @@ export default function App() {
             {users.map((u, i) => (
               <Card key={u.id} className="p-6 flex flex-col items-center text-center gap-4">
                 <img src={u.photoURL || `https://i.pravatar.cc/150?u=${u.id}`} className="w-20 h-20 rounded-2xl object-cover" alt="User" />
-                <div>
-                  <h4 className="font-black text-lg">{u.name || 'User'}</h4>
-                  <p className="text-xs text-ink/40 font-bold">{u.email}</p>
+                <div className="w-full min-w-0">
+                  <h4 className="font-black text-lg truncate">{u.name || 'User'}</h4>
+                  <p className="text-xs text-ink/40 font-bold truncate">{u.email}</p>
                   <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-bg text-primary mt-2 inline-block">{u.role}</span>
                 </div>
-                <div className="flex gap-2 w-full">
+                <div className="grid grid-cols-2 gap-2 w-full">
                   <button 
                     onClick={async () => {
                       const newRole = u.role === 'admin' ? 'user' : 'admin';
@@ -3378,7 +3386,7 @@ export default function App() {
                         handleFirestoreError(error, OperationType.UPDATE, `users/${u.id}`);
                       }
                     }}
-                    className="flex-1 py-2 bg-bg rounded-xl text-xs font-bold hover:bg-black/5 transition-all"
+                    className="py-2 bg-bg rounded-xl text-[11px] leading-tight font-bold hover:bg-black/5 transition-all"
                   >
                     Make {u.role === 'admin' ? 'User' : 'Admin'}
                   </button>
@@ -3391,11 +3399,11 @@ export default function App() {
                         handleFirestoreError(error, OperationType.UPDATE, `users/${u.id}`);
                       }
                     }}
-                    className="flex-1 py-2 bg-primary/10 text-primary rounded-xl text-xs font-bold hover:bg-primary/20 transition-all"
+                    className="py-2 bg-primary/10 text-primary rounded-xl text-[11px] leading-tight font-bold hover:bg-primary/20 transition-all"
                   >
                     Make {u.role === 'vendor' ? 'User' : 'Vendor'}
                   </button>
-                  <button className="flex-1 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-bold hover:bg-red-100 transition-all">Block</button>
+                  <button className="col-span-2 py-2 bg-red-50 text-red-500 rounded-xl text-[11px] leading-tight font-bold hover:bg-red-100 transition-all">Block</button>
                 </div>
               </Card>
             ))}
@@ -3852,9 +3860,13 @@ export default function App() {
     </div>
   );
 
+  const isDesktopWideLayout =
+    (screen === 'admin' || screen === 'vendor') ||
+    (isDesktopViewport && !['splash', 'onboarding', 'login'].includes(screen));
+
   // --- Main Render ---
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-bg relative overflow-x-hidden shadow-2xl">
+    <div className={`${isDesktopWideLayout ? 'w-full max-w-[1280px]' : 'max-w-md'} mx-auto min-h-screen bg-bg relative overflow-x-hidden shadow-2xl`}>
       <AnimatePresence mode="wait">
         <motion.div
           key={screen}
