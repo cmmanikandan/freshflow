@@ -1,0 +1,148 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields: uid, name, email, photoURL, role, points, vouchers, addresses, paymentMethods
+    //
+    // Collection: products
+    // Document ID: {productId}
+    // Fields: id, name, price, unit, rating, category, image, calories, protein, description, stock
+    //
+    // Collection: orders
+    // Document ID: {orderId}
+    // Fields: customer (map: uid, name, email, photoURL), status, total, items (list), createdAt, address, paymentMethod, timeSlot
+    //
+    // Collection: categories
+    // Document ID: {categoryId}
+    // Fields: id, name, icon, color
+    //
+    // Collection: vendors
+    // Document ID: {vendorId}
+    // Fields: id, name, type, rating, sales, image
+    //
+    // Collection: offers
+    // Document ID: {offerId}
+    // Fields: id, title, code, discount, status, color, expiry
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') || 
+         (request.auth.token.email == "manikandanprabhu37@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isVendor() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'vendor';
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['admin', 'user', 'vendor'] &&
+             (!('name' in data) || data.name is string) &&
+             (!('phone' in data) || data.phone is string) &&
+             (!('street' in data) || data.street is string) &&
+             (!('landmark' in data) || data.landmark is string) &&
+             (!('city' in data) || data.city is string) &&
+             (!('district' in data) || data.district is string) &&
+             (!('pinCode' in data) || data.pinCode is string);
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'price', 'category']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.price is number && data.price > 0 &&
+             data.category is string &&
+             (!('stock' in data) || (data.stock is number && data.stock >= 0)) &&
+             (!('image' in data) || (data.image is string && data.image.size() < 200000)) &&
+             (!('description' in data) || (data.description is string && data.description.size() < 1000));
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['customer', 'status', 'total', 'items', 'createdAt']) &&
+             data.customer is map &&
+             data.customer.uid is string && data.customer.uid.size() < 100 &&
+             data.customer.name is string && data.customer.name.size() < 100 &&
+             (!('phone' in data.customer) || (data.customer.phone is string && data.customer.phone.size() < 20)) &&
+             data.status in ['Processing', 'Confirmed', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'] &&
+             data.total is number && data.total >= 0 &&
+             data.items is list && data.items.size() < 50 &&
+             data.createdAt is timestamp &&
+             (!('paymentStatus' in data) || data.paymentStatus in ['Paid', 'Pending']);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == 'user') || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin());
+      allow delete: if isAdmin();
+      
+      match /subscriptions/{subId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      match /notifications/{notifId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if (isAdmin() || isVendor()) && isValidProduct(request.resource.data);
+    }
+
+    match /orders/{orderId} {
+      allow get: if isAuthenticated() && (resource.data.customer.uid == request.auth.uid || isAdmin());
+      allow list: if isAuthenticated() && (isAdmin() || request.auth.uid != null);
+      allow create: if isAuthenticated() && isValidOrder(request.resource.data) && 
+                    (request.resource.data.customer.uid == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && (isAdmin() || resource.data.customer.uid == request.auth.uid) && isValidOrder(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /vendors/{vendorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /offers/{offerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique Firebase Auth ID" },
+        "name": { "type": "string", "description": "User's full name" },
+        "email": { "type": "string", "format": "email", "description": "User's email address" },
+        "photoURL": { "type": "string", "description": "User's profile picture URL" },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "User's role in the system" },
+        "points": { "type": "number", "description": "Loyalty points earned" },
+        "vouchers": { "type": "number", "description": "Number of active vouchers" },
+        "addresses": { "type": "array", "items": { "type": "string" }, "description": "Saved delivery addresses" },
+        "paymentMethods": { "type": "array", "items": { "type": "string" }, "description": "Saved payment methods" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Grocery item available for purchase",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique product ID" },
+        "name": { "type": "string", "description": "Product name" },
+        "price": { "type": "number", "description": "Price per unit" },
+        "unit": { "type": "string", "description": "Measurement unit (e.g., 1kg, 1L)" },
+        "rating": { "type": "number", "description": "Average customer rating" },
+        "category": { "type": "string", "description": "Product category ID" },
+        "image": { "type": "string", "description": "Product image URL" },
+        "calories": { "type": "number", "description": "Calories per unit" },
+        "protein": { "type": "string", "description": "Protein content" },
+        "description": { "type": "string", "description": "Product description" },
+        "stock": { "type": "number", "description": "Current inventory level" }
+      },
+      "required": ["id", "name", "price", "category"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique order ID" },
+        "customerId": { "type": "string", "description": "UID of the customer" },
+        "customerName": { "type": "string", "description": "Name of the customer" },
+        "status": { "type": "string", "enum": ["Processing", "Delivered", "Cancelled"], "description": "Current order status" },
+        "amount": { "type": "number", "description": "Total order amount" },
+        "items": { "type": "array", "items": { "type": "object" }, "description": "List of items in the order" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Order creation time" },
+        "address": { "type": "string", "description": "Delivery address" },
+        "timeSlot": { "type": "string", "description": "Selected delivery time slot" }
+      },
+      "required": ["id", "customerId", "status", "amount", "items", "timestamp"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product category definition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique category ID" },
+        "name": { "type": "string", "description": "Category name" },
+        "icon": { "type": "string", "description": "Lucide icon name" },
+        "color": { "type": "string", "description": "Tailwind color class" }
+      },
+      "required": ["id", "name"]
+    },
+    "Vendor": {
+      "title": "Vendor",
+      "description": "Local partner information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique vendor ID" },
+        "name": { "type": "string", "description": "Vendor name" },
+        "type": { "type": "string", "description": "Type of products sold" },
+        "rating": { "type": "number", "description": "Vendor rating" },
+        "sales": { "type": "number", "description": "Total sales volume" },
+        "image": { "type": "string", "description": "Vendor logo/image URL" }
+      },
+      "required": ["id", "name"]
+    },
+    "Offer": {
+      "title": "Offer",
+      "description": "Discount campaign or coupon",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique offer ID" },
+        "title": { "type": "string", "description": "Offer title" },
+        "code": { "type": "string", "description": "Coupon code" },
+        "discount": { "type": "string", "description": "Discount description (e.g., 20% OFF)" },
+        "status": { "type": "string", "enum": ["Active", "Expired"], "description": "Current campaign status" },
+        "color": { "type": "string", "description": "Tailwind color class" },
+        "expiry": { "type": "string", "format": "date-time", "description": "Offer expiration date" }
+      },
+      "required": ["id", "title", "code", "discount", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Product inventory"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Product categories"
+    },
+    "/vendors/{vendorId}": {
+      "schema": "Vendor",
+      "description": "Local vendors"
+    },
+    "/offers/{offerId}": {
+      "schema": "Offer",
+      "description": "Promotional offers"
+    }
+  }
+}

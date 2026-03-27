@@ -1,0 +1,9 @@
+{
+  "name": "FreshFlow - AI Grocery Delivery",
+  "description": "A futuristic, AI-powered grocery delivery platform with smart recommendations, health tracking, and automated kitchen management.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

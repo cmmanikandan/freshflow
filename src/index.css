@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  
+  --font-sans: "Inter", "Poppins", ui-sans-serif, system-ui, sans-serif;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+@layer base {
+  :root {
+    --primary: #2ECC71;
+    --secondary: #F39C12;
+    --bg: #F8F9FA;
+    --ink: #2C3E50;
+  }
+  
+  .dark {
+    --bg: #121212;
+    --ink: #E0E0E0;
+  }
+
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+  }
+}
+
+.glass {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
