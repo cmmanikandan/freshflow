@@ -239,6 +239,8 @@ export default function App() {
   });
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('English');
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'user', photoURL: '' });
   const [isAddVendorModalOpen, setIsAddVendorModalOpen] = useState(false);
   const [newVendor, setNewVendor] = useState({ name: '', type: '', image: '' });
   const [isBulkImportVendorModalOpen, setIsBulkImportVendorModalOpen] = useState(false);
@@ -733,6 +735,11 @@ export default function App() {
 
     return result;
   }, [searchQuery, selectedCategory, products, sortBy, priceRange]);
+
+  const myOrders = useMemo(() => {
+    if (!user?.uid) return [];
+    return orders.filter((o: any) => o?.customer?.uid === user.uid);
+  }, [orders, user?.uid]);
 
   // --- Screen Components ---
 
@@ -1286,7 +1293,7 @@ export default function App() {
                 >
                   <ICONS.Clock size={16} className="text-ink/40" />
                   <span className="flex-1 text-sm font-bold">{search}</span>
-                  <ICONS.ArrowUpRight size={14} className="text-ink/20" />
+                  <ICONS.ChevronRight size={14} className="text-ink/20" />
                 </button>
               ))}
             </div>
@@ -2063,7 +2070,7 @@ export default function App() {
   };
 
   const TrackingScreen = () => {
-    const latestOrder = trackingOrderId ? orders.find(o => o.id === trackingOrderId) : orders[0];
+    const latestOrder = trackingOrderId ? myOrders.find(o => o.id === trackingOrderId) : myOrders[0];
 
     if (!latestOrder) {
       return (
@@ -2536,7 +2543,7 @@ export default function App() {
       </div>
 
       <div className="flex flex-col gap-4">
-        {orders.length > 0 ? orders.map(order => (
+        {myOrders.length > 0 ? myOrders.map(order => (
           <Card key={order.id} className="flex flex-col gap-4 p-6">
             <div className="flex justify-between items-start">
               <div>
@@ -2811,7 +2818,7 @@ export default function App() {
             <button onClick={() => setScreen('tracking')} className="text-xs font-black text-primary uppercase">Track Active</button>
           </div>
           <div className="flex flex-col gap-3">
-            {orders.slice(0, 3).map(order => (
+            {myOrders.slice(0, 3).map(order => (
               <Card key={order.id} className="flex items-center gap-4 p-4">
                 <div className="w-12 h-12 bg-bg rounded-xl flex items-center justify-center text-ink/20 font-black text-[10px]">
                   #{order.id.slice(-4).toUpperCase()}
@@ -2825,7 +2832,7 @@ export default function App() {
                 </span>
               </Card>
             ))}
-            {orders.length === 0 && (
+            {myOrders.length === 0 && (
               <p className="text-center py-4 text-xs text-ink/20 font-bold">No orders yet</p>
             )}
           </div>
@@ -2883,6 +2890,7 @@ export default function App() {
   };
 
   const [adminTab, setAdminTab] = useState('Analytics');
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [newProduct, setNewProduct] = useState(INITIAL_PRODUCT_STATE);
@@ -3875,7 +3883,7 @@ export default function App() {
         <div className="flex flex-col gap-6">
           <div className="flex justify-between items-center">
             <h3 className="text-2xl font-black">User Management</h3>
-            <Button className="px-6">Add New User</Button>
+            <Button className="px-6" onClick={() => setIsAddUserModalOpen(true)}>Add New User</Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {users.map((u, i) => (
@@ -3913,7 +3921,32 @@ export default function App() {
                   >
                     Make {u.role === 'vendor' ? 'User' : 'Vendor'}
                   </button>
-                  <button className="col-span-2 py-2 bg-red-50 text-red-500 rounded-xl text-[11px] leading-tight font-bold hover:bg-red-100 transition-all">Block</button>
+                  <button
+                    onClick={async () => {
+                      if (deletingUserId === u.id) return;
+                      if (user?.uid === u.id) {
+                        showToast('You cannot delete your own account', 'error');
+                        return;
+                      }
+                      const confirmed = window.confirm(`Delete ${u.name || u.email || 'this user'} (${u.role || 'user'})?`);
+                      if (!confirmed) return;
+                      setDeletingUserId(u.id);
+                      try {
+                        await deleteDoc(doc(db, 'users', u.id));
+                        showToast('User deleted successfully');
+                      } catch (error) {
+                        handleFirestoreError(error, OperationType.DELETE, `users/${u.id}`);
+                      } finally {
+                        setDeletingUserId(null);
+                      }
+                    }}
+                    disabled={deletingUserId === u.id}
+                    className="col-span-2 py-2 bg-red-50 text-red-500 rounded-xl text-[11px] leading-tight font-bold hover:bg-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingUserId === u.id
+                      ? 'Deleting...'
+                      : `Delete ${u.role === 'admin' ? 'Admin' : u.role === 'vendor' ? 'Vendor' : 'User'}`}
+                  </button>
                 </div>
               </Card>
             ))}
@@ -4115,6 +4148,8 @@ export default function App() {
                   </button>
                   <button 
                     onClick={async () => {
+                      const confirmed = window.confirm(`Delete vendor ${vendor.name}?`);
+                      if (!confirmed) return;
                       try {
                         await deleteDoc(doc(db, 'vendors', vendor.id));
                         showToast('Vendor removed');
@@ -4437,6 +4472,90 @@ export default function App() {
               {selectedLanguage === lang && <ICONS.CheckCircle size={20} />}
             </button>
           ))}
+        </div>
+      </Modal>
+
+      <Modal 
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        title="Add New User"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-ink/40 uppercase tracking-widest">Name</label>
+            <input
+              type="text"
+              value={newUser.name}
+              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              className="bg-bg rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="e.g. John Doe"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-ink/40 uppercase tracking-widest">Email</label>
+            <input
+              type="email"
+              value={newUser.email}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              className="bg-bg rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="user@example.com"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-ink/40 uppercase tracking-widest">Role</label>
+            <select
+              value={newUser.role}
+              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              className="bg-bg rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="user">User</option>
+              <option value="vendor">Vendor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-ink/40 uppercase tracking-widest">Photo URL (optional)</label>
+            <input
+              type="url"
+              value={newUser.photoURL}
+              onChange={(e) => setNewUser({ ...newUser, photoURL: e.target.value })}
+              className="bg-bg rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="https://..."
+            />
+          </div>
+          <Button
+            onClick={async () => {
+              if (!newUser.name.trim() || !newUser.email.trim()) {
+                showToast('Please fill name and email', 'error');
+                return;
+              }
+
+              const exists = users.some((u) => String(u.email || '').toLowerCase() === newUser.email.trim().toLowerCase());
+              if (exists) {
+                showToast('User with this email already exists', 'error');
+                return;
+              }
+
+              try {
+                await addDoc(collection(db, 'users'), {
+                  name: newUser.name.trim(),
+                  email: newUser.email.trim(),
+                  role: newUser.role,
+                  photoURL: newUser.photoURL.trim(),
+                  points: 0,
+                  createdAt: serverTimestamp()
+                });
+                setIsAddUserModalOpen(false);
+                setNewUser({ name: '', email: '', role: 'user', photoURL: '' });
+                showToast('User added successfully');
+              } catch (error) {
+                handleFirestoreError(error, OperationType.CREATE, 'users');
+              }
+            }}
+            className="mt-4"
+          >
+            Add User
+          </Button>
         </div>
       </Modal>
 
